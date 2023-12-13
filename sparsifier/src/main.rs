@@ -1,5 +1,5 @@
 
-use ndarray::{Array1,Array2,arr1};
+use ndarray::{Array1,Array2,arr1,s};
 use rand::Rng;
 use ndarray_rand::RandomExt;
 use ndarray_rand::rand_distr::Uniform;
@@ -26,7 +26,9 @@ pub struct Sparsifier{
     pub occupied_rows: Array1<f64>,
 }
 
-//consider CSR type representation later maybe?
+//test for correcness so far
+//consider CSR type representation later maybe? check against this version for correctness
+//
 impl Sparsifier{
     pub fn new(nodesize: usize, epsilon: f64, beta_constant: usize, row_constant: usize) -> Sparsifier {
         let beta = (epsilon.powf(-2.0) * (beta_constant as f64) * (nodesize as f64).log(2.0)).round() as usize;
@@ -85,14 +87,17 @@ impl Sparsifier{
         let coins = Array1::random(self.max_rows, Uniform::new(0., 1.));
         // if the coin value is less than the filtered estimate, divide the row by sqrt(filtered estimate). else set the row to 0.
         //println!("{:?}", coins);
-
+        let reweight_factors = Array1::<f64>::zeros(self.max_rows);
+        for i in 0..=self.max_rows-1 {
+            reweight_factors[[i]] += filtered_estimates[[i]].powf(-0.5);
+        }
         
         //
         let mut next_row: usize = 0;
         for i in 0..=self.max_rows-1 {
             if coins[[i]] < filtered_estimates[[i]] {
-                let reweight_factor = filtered_estimates[[i]].powf(-0.5);
-                self.rows.row_mut(next_row).assign(self.rows.row(i)*arr1(&[reweight_factor]));
+                //let reweight_factor = filtered_estimates[[i]].powf(-0.5);
+                self.rows.row_mut(next_row).assign(self.rows.slice(s![0, ..])*arr1(&[reweight_factors[[i]]]));
                 next_row +=1;
             }
             else {
@@ -104,7 +109,7 @@ impl Sparsifier{
         for i in num_nonzeros..=self.max_rows-1 {
             self.rows.row_mut(i).assign(&Array1::<f64>::zeros(self.nodesize));
         }
-
+        self.first_zero_row = num_nonzeros;
 
 
     }
@@ -133,6 +138,8 @@ fn main() {
     //initial.display();
     //initial.insert(1,2);
     initial.display();
+
+    
 
     //let zeros = Array2::<f64>::zeros((10,10));
     //println!("{:?}", zeros[[0,0]]);
