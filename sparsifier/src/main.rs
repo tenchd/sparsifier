@@ -5,7 +5,7 @@ use ndarray::array;
 
 
 mod sparsifiers;
-mod tests;
+mod unit_tests;
 
 use sparsifiers::Sparsifier;
 
