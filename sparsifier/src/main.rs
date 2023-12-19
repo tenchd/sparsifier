@@ -4,21 +4,10 @@ use rand::Rng;
 use ndarray::array;
 
 
-mod sparsifier;
+mod sparsifiers;
+mod tests;
 
-use sparsifier::Sparsifier;
-
-
-// fn filterer(value: &f64) -> f64 {
-//     if value < &1.0 {
-//         *value
-//     }
-//     else {
-//         1.0
-//     }
-// }
-
-
+use sparsifiers::Sparsifier;
 
 
 fn main() {
@@ -26,8 +15,9 @@ fn main() {
     let epsilon: f64 = 1.0;
     let row_constant: usize  = 1;
     let beta_constant: usize = 1;
+    let verbose: bool = false;
 
-    let mut initial = Sparsifier::new(nodesize, epsilon, beta_constant, row_constant);
+    let mut initial = Sparsifier::new(nodesize, epsilon, beta_constant, row_constant, verbose);
 
     
 

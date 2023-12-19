@@ -5,7 +5,6 @@ use ndarray_rand::rand_distr::Uniform;
 use std::fmt;
 
 
-
 fn filterer(value: &f64) -> f64 {
     if value < &1.0 {
         *value
@@ -80,6 +79,8 @@ pub struct Sparsifier{
     pub rows: Vec<EdgeRow>,
     // rows array is kept so that all nonzero rows come before all zero rows. this is a pointer to the first zero row.
     pub first_zero_row: usize,
+    // if true, print lots of state information whenever sparsifying.
+    pub verbose: bool,
 }
 
 //second attempt at a sparsifier that works. simpler and more compact design this time
@@ -87,7 +88,7 @@ pub struct Sparsifier{
 //consider CSR type representation later maybe? check against this version for correctness
 //
 impl Sparsifier{
-    pub fn new(nodesize: usize, epsilon: f64, beta_constant: usize, row_constant: usize) -> Sparsifier {
+    pub fn new(nodesize: usize, epsilon: f64, beta_constant: usize, row_constant: usize, verbose: bool) -> Sparsifier {
         // as per line 1
         let beta = (epsilon.powf(-2.0) * (beta_constant as f64) * (nodesize as f64).log(2.0)).round() as usize;
         // as per 3(b) condition
@@ -103,6 +104,7 @@ impl Sparsifier{
             max_rows: max_rows,
             rows: rows,
             first_zero_row: 0,
+            verbose: verbose,
         }
     }
 
@@ -139,20 +141,20 @@ impl Sparsifier{
     }
 
     pub fn sparsify(& mut self){
-        println!("time to sparsify!");
+        //println!("time to sparsify!");
         //placeholder: random estimates for now
         let estimates = self.estimate_leverage_scores();
-        println!("{:?}\n\n", estimates);
+        //println!("{:?}\n\n", estimates);
         //multiply all by beta as per 3(b)ii
         let scaled_estimates = estimates * arr1(&[self.beta as f64]);
-        println!("{:?}\n\n", scaled_estimates);
+        //println!("{:?}\n\n", scaled_estimates);
         //estimates less than 1 are squared, those larger than 1 are set to 1. this is a dumb way to do this, fix it later
         let filtered_estimates = scaled_estimates.map(&filterer) * scaled_estimates.map(&filterer);
-        println!("{:?}\n\n", filtered_estimates);
+        //println!("{:?}\n\n", filtered_estimates);
         //subsample each row w/p = its filtered estimate
         let coins = Array1::random(self.max_rows, Uniform::new(0., 1.));
         // if the coin value is less than the filtered estimate, divide the row by sqrt(filtered estimate). else set the row to 0.
-        println!("{:?}\n\n", coins);
+        //println!("{:?}\n\n", coins);
         let mut reweight_factors = Array1::<f64>::zeros(self.max_rows);
         for i in 0..=self.max_rows-1 {
             reweight_factors[[i]] += filtered_estimates[[i]].powf(-0.5);
@@ -172,10 +174,10 @@ impl Sparsifier{
             }
         }
         
-        for row in &self.rows {
-            print!("{} ", row.weight);
-        }
-        println!();
+        // for row in &self.rows {
+        //     print!("{} ", row.weight);
+        // }
+        // println!();
 
         let num_deletions = deletions.len();
 
