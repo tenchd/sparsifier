@@ -1,16 +1,19 @@
 
 use rand::Rng;
 //use std::ops::{AddAssign,MulAssign};
-use ndarray::array;
+extern crate fasthash;
+use ndarray::{Array1,Array2,arr1,array};
 
 
 mod sparsifiers;
 mod unit_tests;
+mod jl_sketch;
 
 use sparsifiers::Sparsifier;
+use jl_sketch::{hash_with_inputs,populate_matrix};
 
 
-fn main() {
+fn main1() {
     let nodesize: usize  = 10;
     let epsilon: f64 = 1.0;
     let row_constant: usize  = 1;
@@ -48,4 +51,16 @@ fn main() {
 
     //let zeros = Array2::<f64>::zeros((10,10));
     //println!("{:?}", zeros[[0,0]]);
+}
+
+fn main(){
+    //for i in 0..20 {
+    //    println!("{}", hash_with_inputs(0,1,i));
+    //}
+    for i in 0..20{
+        let mut input: Array2<i64> = Array2::zeros((10,10));
+        populate_matrix(&mut input, i);
+        //println!("{:?}", input);
+        println!("{}", input.sum());
+    }
 }
