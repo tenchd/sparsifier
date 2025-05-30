@@ -57,10 +57,13 @@ fn main(){
     //for i in 0..20 {
     //    println!("{}", hash_with_inputs(0,1,i));
     //}
+    /*
     for i in 0..20{
-        let mut input: Array2<i64> = Array2::zeros((10,10));
+        let mut input: Array2<f64> = Array2::zeros((10,10));
         populate_matrix(&mut input, i);
         //println!("{:?}", input);
         println!("{}", input.sum());
     }
+    // */
+    let input: Array2<f64> = Array2::ones((10,10))
 }
