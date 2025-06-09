@@ -1,4 +1,4 @@
-cargo-features = ["edition2021"]
+
 [package]
 name = "sparsifier"
 version = "0.1.0"
@@ -11,4 +11,4 @@ ndarray = "0.15.6"
 rand = "0.8.5"
 ndarray-rand = "0.14.0"
 fasthash = "0.4.0"
-math = "0.11.0"
+sprs = "0.11.3"

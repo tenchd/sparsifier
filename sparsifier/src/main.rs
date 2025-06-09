@@ -2,7 +2,11 @@
 use rand::Rng;
 //use std::ops::{AddAssign,MulAssign};
 extern crate fasthash;
-use ndarray::{Array1,Array2,arr1,array};
+use ndarray::{Array2,Array};
+use ndarray_rand::RandomExt;
+use ndarray_rand::rand_distr::Uniform;
+
+use sprs::{CsMat, CsMatView, CsVec};
 
 
 mod sparsifiers;
@@ -10,7 +14,7 @@ mod unit_tests;
 mod jl_sketch;
 
 use sparsifiers::Sparsifier;
-use jl_sketch::{hash_with_inputs,populate_matrix};
+use jl_sketch::{hash_with_inputs,populate_matrix,jl_sketch_naive,multiplier,jl_sketch_sparse};
 
 
 fn main1() {
@@ -65,5 +69,34 @@ fn main(){
         println!("{}", input.sum());
     }
     // */
-    let input: Array2<f64> = Array2::ones((10,10))
-}
+
+    let input = Array2::random((10, 10), Uniform::new(0., 1.));
+    //println!("{:8.4}", a);
+    let sparse_input : CsMat<f64> = CsMat::csr_from_dense(input.view(), 0.);
+
+
+    
+
+    //let input: Array2<f64> = Array2::ones((10,10));
+    //jl_sketch_naive(&input, 1.5, 3);
+
+    /*
+    let eye : CsMat<f64> = CsMat::eye(3);
+    let a = CsMat::new_csc((3, 3),
+                       vec![0, 2, 4, 5],
+                       vec![0, 1, 0, 2, 2],
+                       vec![1., 2., 3., 4., 5.]);
+    println!("{:?}",a);
+    */
+
+    let sparse_result1 = jl_sketch_sparse(&sparse_input, 1.5, 1);
+    let result2 = jl_sketch_naive(&input, 1.5, 1);
+    let sparse_result2 : CsMat<f64> = CsMat::csr_from_dense(result2.view(), -10.);
+    //println!("{:?}", jl_sketch_sparse(&sparse_input, 1.5, 1));
+    //println!("{:?}", jl_sketch_naive(&input, 1.5, 1));
+
+    assert_eq!(sparse_result1, sparse_result2)
+    
+    //let b = multiplier(&sparse_input, &input2);
+    //println!("{:?}", b);
+    }

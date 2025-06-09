@@ -1,13 +1,13 @@
-use ndarray::{Array1,Array2,ArrayView2,arr1};
-use ndarray_rand::RandomExt;
-use ndarray_rand::rand_distr::Uniform;
+use ndarray::{Array2,ArrayView2};
 
 use fasthash::xx::Hasher64 as XXHasher;
 use crate::fasthash::FastHasher;
 use std::hash::{Hash,Hasher};
 
-use math::round::ceil;
+//use math::round::ceil;
 
+use sprs::{CsMat, CsMatView};
+use std::ops::Mul;
 
 
 //maps hash function output to {-1,1} evenly
@@ -40,16 +40,40 @@ pub fn populate_matrix(input: &mut Array2<f64>, seed: u64) {
 
 }
 
-
-pub fn jl_sketch_naive(og_matrix: ArrayView2<f64>, jl_factor: f64, seed: u64) -> Array2<f64>{
+// this function both takes a dense matrix representation of the original matrix 
+// (though we expect this matrix to be sparse) and allocates the entire JL matrix (actually dense, pretty big)
+// so it's not scalable. can be used for correctness checking
+pub fn jl_sketch_naive(og_matrix: &Array2<f64>, jl_factor: f64, seed: u64) -> Array2<f64>{
     let og_rows = og_matrix.dim().0;
     let og_cols = og_matrix.dim().1;
-    let jl_dim = ceil((og_rows as f64).log2() *jl_factor) as u64
-    let mut sketch_matrix = Array2::zeros((og_cols,jl_dim));
-    populate_matrix(&sketch_matrix, seed);
+    let jl_dim = ((og_rows as f64).log2() *jl_factor).ceil() as usize;
+    let mut sketch_matrix: Array2<f64> = Array2::zeros((og_cols,jl_dim));
+    populate_matrix(&mut sketch_matrix, seed);
     let result = og_matrix.dot(&sketch_matrix);
     println!("{:?}", og_matrix);
     println!("{:?}", sketch_matrix);
     println!("{:?}", result);
     result
+}
+
+// we assume that og_matrix is sparse. the sketch matrix is always dense by construction.
+
+ pub fn jl_sketch_sparse(og_matrix: &CsMat<f64>, jl_factor: f64, seed: u64) -> CsMat<f64> {
+    let og_rows = og_matrix.rows();
+    let og_cols = og_matrix.cols();
+    let jl_dim = ((og_rows as f64).log2() *jl_factor).ceil() as usize;
+    let mut sketch_matrix: Array2<f64> = Array2::zeros((og_cols,jl_dim));
+    populate_matrix(&mut sketch_matrix, seed);
+    let csr_sketch_matrix : CsMat<f64> = CsMat::csr_from_dense(sketch_matrix.view(), -1.0); // i'm nervous about using csr_from_dense with negative epsilon, but it seems to work
+    let result = og_matrix.mul(&csr_sketch_matrix);
+    println!("{:?}", og_matrix);
+    println!("{:?}", sketch_matrix);
+    println!("{:?}", result);
+    result
+ }
+ 
+
+
+pub fn multiplier(og_matrix: &CsMat<f64>, other: &CsMat<f64>) -> CsMat<f64> {
+    return og_matrix * other
 }
