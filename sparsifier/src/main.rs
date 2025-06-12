@@ -14,7 +14,7 @@ mod unit_tests;
 mod jl_sketch;
 
 use sparsifiers::Sparsifier;
-use jl_sketch::{hash_with_inputs,populate_matrix,jl_sketch_naive,multiplier,jl_sketch_sparse};
+use jl_sketch::{hash_with_inputs,populate_matrix,jl_sketch_naive,multiplier,jl_sketch_sparse,try_row_populate,jl_sketch_sparse_blocked};
 
 
 fn main1() {
@@ -69,34 +69,35 @@ fn main(){
         println!("{}", input.sum());
     }
     // */
-
-    let input = Array2::random((10, 10), Uniform::new(0., 1.));
+    let m = 10;
+    let n = 10;
+    let input = Array2::random((m, n), Uniform::new(0., 1.));
     //println!("{:8.4}", a);
-    let sparse_input : CsMat<f64> = CsMat::csr_from_dense(input.view(), 0.);
-
-
-    
-
-    //let input: Array2<f64> = Array2::ones((10,10));
-    //jl_sketch_naive(&input, 1.5, 3);
+    let sparse_input : CsMat<f64> = CsMat::csc_from_dense(input.view(), 0.);
+    let col: usize = 0;
 
     /*
-    let eye : CsMat<f64> = CsMat::eye(3);
-    let a = CsMat::new_csc((3, 3),
-                       vec![0, 2, 4, 5],
-                       vec![0, 1, 0, 2, 2],
-                       vec![1., 2., 3., 4., 5.]);
-    println!("{:?}",a);
+    let bleh = sparse_input.indptr().outer_inds(1);
+    println!("{:?}", sparse_input);
+    for i in bleh {
+        println!("{:?}", sparse_input.data()[i]);
+    }
     */
+    let seed: u64 = 1;
+    let jl_factor: f64 = 1.5;
+    let jl_dim = ((n as f64).log2() *jl_factor).ceil() as usize;
 
-    let sparse_result1 = jl_sketch_sparse(&sparse_input, 1.5, 1);
-    let result2 = jl_sketch_naive(&input, 1.5, 1);
-    let sparse_result2 : CsMat<f64> = CsMat::csr_from_dense(result2.view(), -10.);
-    //println!("{:?}", jl_sketch_sparse(&sparse_input, 1.5, 1));
-    //println!("{:?}", jl_sketch_naive(&input, 1.5, 1));
+    let sparse_result1 = jl_sketch_sparse(&sparse_input, jl_factor, seed);
+    let result2 = jl_sketch_naive(&input, jl_factor, seed);
+    let sparse_result2 : CsMat<f64> = CsMat::csc_from_dense(result2.view(), -10.);
+    assert_eq!(sparse_result1, sparse_result2);
 
-    assert_eq!(sparse_result1, sparse_result2)
+    let mut blocked_result: CsMat<f64> = CsMat::zero((n,jl_dim));
+    jl_sketch_sparse_blocked(&sparse_input, &mut blocked_result, jl_dim, seed, 3, 3);
+    assert_eq!(sparse_result1, blocked_result);
+
+
+
+    //try_row_populate(20);
     
-    //let b = multiplier(&sparse_input, &input2);
-    //println!("{:?}", b);
     }
