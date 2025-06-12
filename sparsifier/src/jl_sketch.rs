@@ -27,6 +27,14 @@ pub fn get_nz_indices(input: &Array2<f64>, col: usize) -> {
 }
 */
 
+// function to add value 'val' to position 'row', 'col' in sparse matrix. 
+pub fn add_to_position(matrix: &mut CsMat<f64>, row: usize, col: usize, val:f64) {
+    let mut location = matrix.get_mut(row,col);
+    match location {
+        Some(p) => *p += val,
+        None => matrix.insert(row, col, val),
+    }
+}
 
 //this function is used to find the value of a hash function seeded with seed, when given two positional arguments. Used to repeatably compute values in the JL sketch matrix
 // by passing the coordinates of the position as the two arguments.
@@ -106,23 +114,39 @@ pub fn jl_sketch_sparse_blocked(og_matrix: &CsMat<f64>, result_matrix: &mut CsMa
     let block_col_size = min(jl_dim, block_cols);
     for i in (0..og_cols).step_by(block_row_size){
         for j in (0..jl_dim).step_by(block_col_size){
+
             // make sure we don't overrun the last column in the JL sketch matrix (can happen when JL output dim isn't a multiple of block_col_size)
-            let num_cols = min(jl_dim + j - 1, block_col_size);
+            // we're going to iterate from column j to column j+num_cols
+            //let num_cols = min(jl_dim + j - 1, block_col_size);
+            let inner_cols_max = min(jl_dim, j+block_col_size);
+            let inner_cols_min = j;
+            let num_cols = inner_cols_max-inner_cols_min;
             // make vector that we'll use to temporarily store a row of the jl sketch matrix.
             let mut jl_temp_row: Array1<f64> = Array1::zeros(num_cols);
             //make sure we don't overrun the last row in the JL sketch matrix
-            let num_rows = min(i+block_row_size -1, og_cols);
-            for row in i..num_rows {
+            let inner_rows_min = i;
+            let inner_rows_max = min(i+block_row_size, og_cols);
+
+            println!("i={},j={},row_range={}-{},col_range={}-{}", i, j, inner_rows_min, inner_rows_max, inner_cols_min, inner_cols_max);
+            for row in inner_rows_min..inner_rows_max {
                 // grab every nonzero entry in the row_th column of A
+                println!("{:?}", og_matrix.indptr().outer_inds(row));
                 for index in og_matrix.indptr().outer_inds(row) {
+                    println!("{:?}", og_matrix.indices()[index]);
                     populate_row(&mut jl_temp_row, row, seed);
+                    //println!("{:?}", jl_temp_row);
                     for k in 0..num_cols {
-                        println!("{},{},{},{},{}", i,j,row,index,k);
-                        //result_matrix[[j+k-1, row]] += jl_temp_row[[k]] * og_matrix.data()[index];
-                        result_matrix[[j+k, row]] += jl_temp_row[[k]] * og_matrix.data()[index];
+                        println!("row={},index={},k={}",row,index,k);
+                        //println!("{:?}", result_matrix.get_mut(j+k, row));
+                        //println!("{:?}", jl_temp_row[[k]]);
+                        //println!("{:?}", og_matrix.data()[index]);
+                        let new_value: f64 = jl_temp_row[[k]] * og_matrix.data()[index];
+                        add_to_position(result_matrix, j+k, row, new_value);
+                        //result_matrix.get_mut(j+k, row) += jl_temp_row[[k]] * og_matrix.data()[index];
                     }
                 }
             }
+               // */
         }
     }
 

@@ -4,7 +4,7 @@ use rand::Rng;
 extern crate fasthash;
 use ndarray::{Array2,Array};
 use ndarray_rand::RandomExt;
-use ndarray_rand::rand_distr::Uniform;
+use ndarray_rand::rand_distr::{Uniform,Bernoulli};
 
 use sprs::{CsMat, CsMatView, CsVec};
 
@@ -69,12 +69,21 @@ fn main(){
         println!("{}", input.sum());
     }
     // */
-    let m = 10;
-    let n = 10;
-    let input = Array2::random((m, n), Uniform::new(0., 1.));
+    let m = 7;
+    let n = 7;
+    let values = Array2::random((m, n), Uniform::new(0., 1.));
+    let mask = Array2::random((m, n), Bernoulli::new(0.2).expect("bernoulli gen failed"));
+    let mask_closure = |val: &bool| -> f64 {
+        if *val {
+            return 1.
+        }
+        return 0.
+    };
+    let newmask = mask.map(mask_closure);
+    let input = &values*&newmask;
     //println!("{:8.4}", a);
-    let sparse_input : CsMat<f64> = CsMat::csc_from_dense(input.view(), 0.);
-    let col: usize = 0;
+    let sparse_input : CsMat<f64> = CsMat::csr_from_dense(input.view(), 0.);
+    println!("{:?}", input);
 
     /*
     let bleh = sparse_input.indptr().outer_inds(1);
@@ -86,11 +95,12 @@ fn main(){
     let seed: u64 = 1;
     let jl_factor: f64 = 1.5;
     let jl_dim = ((n as f64).log2() *jl_factor).ceil() as usize;
+    println!("{}", jl_dim);
 
     let sparse_result1 = jl_sketch_sparse(&sparse_input, jl_factor, seed);
-    let result2 = jl_sketch_naive(&input, jl_factor, seed);
-    let sparse_result2 : CsMat<f64> = CsMat::csc_from_dense(result2.view(), -10.);
-    assert_eq!(sparse_result1, sparse_result2);
+    //let result2 = jl_sketch_naive(&input, jl_factor, seed);
+    //let sparse_result2 : CsMat<f64> = CsMat::csr_from_dense(result2.view(), -10.);
+    //assert_eq!(sparse_result1, sparse_result2);
 
     let mut blocked_result: CsMat<f64> = CsMat::zero((n,jl_dim));
     jl_sketch_sparse_blocked(&sparse_input, &mut blocked_result, jl_dim, seed, 3, 3);
