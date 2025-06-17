@@ -2,8 +2,10 @@ use ndarray::{Array1,Array2,ArrayView2};
 
 use fasthash::xx::Hasher64 as XXHasher;
 use crate::fasthash::FastHasher;
+use core::num;
 use std::hash::{Hash,Hasher};
 use std::cmp::min;
+use std::result;
 
 //use math::round::ceil;
 
@@ -59,10 +61,23 @@ pub fn populate_matrix(input: &mut Array2<f64>, seed: u64) {
 
 }
 
+/* old and busted 
 pub fn populate_row(input: &mut Array1<f64>, row: usize, seed: u64){
     let cols = input.dim();
     for col in 0..cols {
         input[[col]] = hash_with_inputs(seed, row as u64, col as u64) as f64;
+    }
+}
+*/
+
+pub fn populate_row(input: &mut Array1<f64>, row: usize, col_start: usize, col_end: usize, seed: u64){
+    //let cols = input.dim();
+    //let col_end = col_start + cols;
+    //println!("{},{}", col_start, col_end);
+    let num_cols = col_end - col_start;
+    for col in 0..num_cols {
+        let actual_col = col+col_start; //have to hash actual column value which should be col+col_start
+        input[[col]] = hash_with_inputs(seed, row as u64, actual_col as u64) as f64; 
     }
 }
 
@@ -75,6 +90,7 @@ pub fn jl_sketch_naive(og_matrix: &Array2<f64>, jl_factor: f64, seed: u64) -> Ar
     let jl_dim = ((og_rows as f64).log2() *jl_factor).ceil() as usize;
     let mut sketch_matrix: Array2<f64> = Array2::zeros((og_cols,jl_dim));
     populate_matrix(&mut sketch_matrix, seed);
+    //println!("{:?}", sketch_matrix);
     let result = og_matrix.dot(&sketch_matrix);
     /*
     println!("{:?}", og_matrix);
@@ -105,7 +121,7 @@ pub fn jl_sketch_naive(og_matrix: &Array2<f64>, jl_factor: f64, seed: u64) -> Ar
  
 
 
-pub fn jl_sketch_sparse_blocked(og_matrix: &CsMat<f64>, result_matrix: &mut CsMat<f64>, jl_dim: usize, seed: u64, block_rows: usize, block_cols: usize) {
+pub fn jl_sketch_sparse_blocked(og_matrix: &CsMat<f64>, result_matrix: &mut CsMat<f64>, jl_dim: usize, seed: u64, block_rows: usize, block_cols: usize, display: bool) {
     let og_rows = og_matrix.rows();
     let og_cols = og_matrix.cols();
     //let jl_dim = ((og_cols as f64).log2() *jl_factor).ceil() as usize; //should this be based on rows or cols? I think cols because there are one col for each vertex.
@@ -127,21 +143,25 @@ pub fn jl_sketch_sparse_blocked(og_matrix: &CsMat<f64>, result_matrix: &mut CsMa
             let inner_rows_min = i;
             let inner_rows_max = min(i+block_row_size, og_cols);
 
-            println!("i={},j={},row_range={}-{},col_range={}-{}", i, j, inner_rows_min, inner_rows_max, inner_cols_min, inner_cols_max);
-            for row in inner_rows_min..inner_rows_max {
+            if (display) {println!("-----i={},j={},sketch_row_range={}-{},sketch_col_range={}-{}-----", i, j, inner_rows_min, inner_rows_max, inner_cols_min, inner_cols_max);}
+            for sketch_row in inner_rows_min..inner_rows_max {
                 // grab every nonzero entry in the row_th column of A
-                println!("{:?}", og_matrix.indptr().outer_inds(row));
-                for index in og_matrix.indptr().outer_inds(row) {
-                    println!("{:?}", og_matrix.indices()[index]);
-                    populate_row(&mut jl_temp_row, row, seed);
-                    //println!("{:?}", jl_temp_row);
+                if (display) {println!("range of nonzeros in column {} of original matrix: {:?}", sketch_row, og_matrix.indptr().outer_inds(sketch_row));}
+                for index in og_matrix.indptr().outer_inds(sketch_row) {
+                    let nonzero_row_index = og_matrix.indices()[index];
+                    if (display) {println!("{} row index of nonzero in col {} of original matrix: {:?}", index, sketch_row, nonzero_row_index);}
+                    populate_row(&mut jl_temp_row, sketch_row, inner_cols_min, inner_cols_max, seed);
+                    if (display) {println!("{:?}", jl_temp_row);}
                     for k in 0..num_cols {
-                        println!("row={},index={},k={}",row,index,k);
-                        //println!("{:?}", result_matrix.get_mut(j+k, row));
+                        if (display) {println!("sketch_row={},index={},k={}",sketch_row,index,k);}
+                        //println!("answer matrix entry {},{} has entry {:?} and we will add {}*{}", sketch_row, j+k, result_matrix.get_mut(j+k, sketch_row), jl_temp_row[[k]], og_matrix.data()[index]);
+                        if (display) {println!("answer matrix entry {},{} has entry {:?} and we will add {}*{}", nonzero_row_index, j+k, result_matrix.get_mut(j+k, sketch_row), jl_temp_row[[k]], og_matrix.data()[index]);}
                         //println!("{:?}", jl_temp_row[[k]]);
                         //println!("{:?}", og_matrix.data()[index]);
                         let new_value: f64 = jl_temp_row[[k]] * og_matrix.data()[index];
-                        add_to_position(result_matrix, j+k, row, new_value);
+                        //add_to_position(result_matrix, j+k, row, new_value);
+                        add_to_position(result_matrix, nonzero_row_index, j+k, new_value);
+                        
                         //result_matrix.get_mut(j+k, row) += jl_temp_row[[k]] * og_matrix.data()[index];
                     }
                 }
@@ -167,6 +187,6 @@ pub fn multiplier(og_matrix: &CsMat<f64>, other: &CsMat<f64>) -> CsMat<f64> {
 pub fn try_row_populate(length: usize) {
     let mut row: Array1<f64> = Array1::zeros(length);
     println!("{:?}",row);
-    populate_row(&mut row, 0, 0);
+    populate_row(&mut row, 0, 0, length,0);
     println!("{:?}",row);
 }

@@ -69,8 +69,10 @@ fn main(){
         println!("{}", input.sum());
     }
     // */
-    let m = 7;
-    let n = 7;
+    let m = 20;
+    let n = 20;
+
+    // /* 
     let values = Array2::random((m, n), Uniform::new(0., 1.));
     let mask = Array2::random((m, n), Bernoulli::new(0.2).expect("bernoulli gen failed"));
     let mask_closure = |val: &bool| -> f64 {
@@ -81,9 +83,21 @@ fn main(){
     };
     let newmask = mask.map(mask_closure);
     let input = &values*&newmask;
-    //println!("{:8.4}", a);
-    let sparse_input : CsMat<f64> = CsMat::csr_from_dense(input.view(), 0.);
+    // */
+    
+/*
+        let mut input: Array2<f64> = Array2::zeros((m,n));
+    input[[1,1]] = 0.5;
+    input[[0,1]] = 0.6;
+    input[[3,5]] = 0.75;
+    input[[5,2]] = 0.2;
+
+*/
+    let sparse_input : CsMat<f64> = CsMat::csc_from_dense(input.view(), 0.);
     println!("{:?}", input);
+    //println!("{:?}", sparse_input);
+
+
 
     /*
     let bleh = sparse_input.indptr().outer_inds(1);
@@ -98,12 +112,14 @@ fn main(){
     println!("{}", jl_dim);
 
     let sparse_result1 = jl_sketch_sparse(&sparse_input, jl_factor, seed);
-    //let result2 = jl_sketch_naive(&input, jl_factor, seed);
-    //let sparse_result2 : CsMat<f64> = CsMat::csr_from_dense(result2.view(), -10.);
-    //assert_eq!(sparse_result1, sparse_result2);
+    let result2 = jl_sketch_naive(&input, jl_factor, seed);
+    println!("{:?}", result2);
+    let sparse_result2 : CsMat<f64> = CsMat::csc_from_dense(result2.view(), -10.);
+    assert_eq!(sparse_result1, sparse_result2);
 
-    let mut blocked_result: CsMat<f64> = CsMat::zero((n,jl_dim));
-    jl_sketch_sparse_blocked(&sparse_input, &mut blocked_result, jl_dim, seed, 3, 3);
+    let mut blocked_result: CsMat<f64> = CsMat::zero((jl_dim,n)).transpose_into();
+    jl_sketch_sparse_blocked(&sparse_input, &mut blocked_result, jl_dim, seed, 3, 3, false);
+    //println!("{:?}",blocked_result);
     assert_eq!(sparse_result1, blocked_result);
 
 
