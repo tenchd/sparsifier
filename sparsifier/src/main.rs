@@ -96,9 +96,9 @@ fn main(){
     println!("output matrix is {}x{}", n, jl_dim);
 
     let sparse_result1 = jl_sketch_sparse(&sparse_input, jl_factor, seed);
-    let result2 = jl_sketch_naive(&input, jl_factor, seed);
+    //let result2 = jl_sketch_naive(&input, jl_factor, seed);
     //println!("{:?}", result2);
-    let sparse_result2 : CsMat<f64> = CsMat::csc_from_dense(result2.view(), -1000000000.);
+    //let sparse_result2 : CsMat<f64> = CsMat::csc_from_dense(result2.view(), -1000000000.);
     //assert_eq!(sparse_result1, sparse_result2);
 
     let mut blocked_result: CsMat<f64> = CsMat::zero((jl_dim,n)).transpose_into();
