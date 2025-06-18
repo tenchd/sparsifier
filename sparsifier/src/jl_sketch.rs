@@ -143,19 +143,19 @@ pub fn jl_sketch_sparse_blocked(og_matrix: &CsMat<f64>, result_matrix: &mut CsMa
             let inner_rows_min = i;
             let inner_rows_max = min(i+block_row_size, og_cols);
 
-            if (display) {println!("-----i={},j={},sketch_row_range={}-{},sketch_col_range={}-{}-----", i, j, inner_rows_min, inner_rows_max, inner_cols_min, inner_cols_max);}
+            if display {println!("-----i={},j={},sketch_row_range={}-{},sketch_col_range={}-{}-----", i, j, inner_rows_min, inner_rows_max, inner_cols_min, inner_cols_max);}
             for sketch_row in inner_rows_min..inner_rows_max {
                 // grab every nonzero entry in the row_th column of A
-                if (display) {println!("range of nonzeros in column {} of original matrix: {:?}", sketch_row, og_matrix.indptr().outer_inds(sketch_row));}
+                if display {println!("range of nonzeros in column {} of original matrix: {:?}", sketch_row, og_matrix.indptr().outer_inds(sketch_row));}
                 for index in og_matrix.indptr().outer_inds(sketch_row) {
                     let nonzero_row_index = og_matrix.indices()[index];
-                    if (display) {println!("{} row index of nonzero in col {} of original matrix: {:?}", index, sketch_row, nonzero_row_index);}
+                    if display {println!("{} row index of nonzero in col {} of original matrix: {:?}", index, sketch_row, nonzero_row_index);}
                     populate_row(&mut jl_temp_row, sketch_row, inner_cols_min, inner_cols_max, seed);
-                    if (display) {println!("{:?}", jl_temp_row);}
+                    if display {println!("{:?}", jl_temp_row);}
                     for k in 0..num_cols {
-                        if (display) {println!("sketch_row={},index={},k={}",sketch_row,index,k);}
+                        if display {println!("sketch_row={},index={},k={}",sketch_row,index,k);}
                         //println!("answer matrix entry {},{} has entry {:?} and we will add {}*{}", sketch_row, j+k, result_matrix.get_mut(j+k, sketch_row), jl_temp_row[[k]], og_matrix.data()[index]);
-                        if (display) {println!("answer matrix entry {},{} has entry {:?} and we will add {}*{}", nonzero_row_index, j+k, result_matrix.get_mut(j+k, sketch_row), jl_temp_row[[k]], og_matrix.data()[index]);}
+                        if display {println!("answer matrix entry {},{} has entry {:?} and we will add {}*{}", nonzero_row_index, j+k, result_matrix.get_mut(j+k, sketch_row), jl_temp_row[[k]], og_matrix.data()[index]);}
                         //println!("{:?}", jl_temp_row[[k]]);
                         //println!("{:?}", og_matrix.data()[index]);
                         let new_value: f64 = jl_temp_row[[k]] * og_matrix.data()[index];
@@ -186,7 +186,14 @@ pub fn multiplier(og_matrix: &CsMat<f64>, other: &CsMat<f64>) -> CsMat<f64> {
 
 pub fn try_row_populate(length: usize) {
     let mut row: Array1<f64> = Array1::zeros(length);
-    println!("{:?}",row);
+    //println!("{:?}",row);
     populate_row(&mut row, 0, 0, length,0);
-    println!("{:?}",row);
+    //println!("{:?}",row);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+
 }

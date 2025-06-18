@@ -58,8 +58,8 @@ fn main1() {
 }
 
 fn main(){
-    let n = 2000; // rows in og matrix = # vertices
-    let m = 40000; // cols in og matrix = # edges. this dim will be sketched away
+    let n = 200; // rows in og matrix = # vertices
+    let m = 4000; // cols in og matrix = # edges. this dim will be sketched away
 
  // /* 
     let values = Array2::random((n, m), Uniform::new(0., 1.));
@@ -108,9 +108,6 @@ fn main(){
     //println!("{:?}",blocked_result);
     //let diff = &blocked_result - &sparse_result2;
     //println!("{:?}", diff);
-    assert_eq!(sparse_result1, blocked_result);
-
-
-
-    
+    assert_eq!(sparse_result1, blocked_result);    
     }
+
