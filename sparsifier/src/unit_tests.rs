@@ -4,7 +4,7 @@ use crate::jl_sketch::{populate_row, jl_sketch_sparse_blocked, jl_sketch_sparse}
 use ndarray::{Array1,Array2};
 use ndarray_rand::RandomExt;
 use ndarray_rand::rand_distr::{Uniform,Bernoulli};
-use sprs::{CsMat, CsMatView};
+use sprs::{CsMat};
 
 #[cfg(test)]
 mod tests {

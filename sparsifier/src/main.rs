@@ -2,11 +2,11 @@
 use rand::Rng;
 //use std::ops::{AddAssign,MulAssign};
 extern crate fasthash;
-use ndarray::{Array2,Array};
+use ndarray::{Array2};
 use ndarray_rand::RandomExt;
 use ndarray_rand::rand_distr::{Uniform,Bernoulli};
 
-use sprs::{CsMat, CsMatView, CsVec};
+use sprs::{CsMat};
 
 
 mod sparsifiers;
@@ -14,7 +14,7 @@ mod unit_tests;
 mod jl_sketch;
 
 use sparsifiers::Sparsifier;
-use jl_sketch::{hash_with_inputs,populate_matrix,jl_sketch_naive,multiplier,jl_sketch_sparse,try_row_populate,jl_sketch_sparse_blocked};
+use jl_sketch::{jl_sketch_sparse,jl_sketch_sparse_blocked};
 
 
 fn main1() {
@@ -29,16 +29,22 @@ fn main1() {
     
 
     for _ in 1..=initial.max_rows {
-        let num1 = rand::thread_rng().gen_range(0..nodesize-1);
-        let num2 = rand::thread_rng().gen_range(num1+1..nodesize);
+        let mut rng = rand::rng();
+        let num1 = rng.random_range(0..nodesize-1);
+        let num2 = rng.random_range(num1+1..nodesize);
+        // let num1 = rand::thread_rng().gen_range(0..nodesize-1);
+        // let num2 = rand::thread_rng().gen_range(num1+1..nodesize);
         //let (num1, num2) = (rand::thread_rng().gen_range(0..nodesize), rand::thread_rng().gen_range(0..nodesize));
         //let (num1, num2) = (1,2);
         initial.insert(num1, num2);
     }
 
     for _ in 0..10 {
-        let num1 = rand::thread_rng().gen_range(0..nodesize-1);
-        let num2 = rand::thread_rng().gen_range(num1+1..nodesize);
+        let mut rng = rand::rng();
+        let num1 = rng.random_range(0..nodesize-1);
+        let num2 = rng.random_range(num1+1..nodesize);
+        // let num1 = rand::thread_rng().gen_range(0..nodesize-1);
+        // let num2 = rand::thread_rng().gen_range(num1+1..nodesize);
         //let (num1, num2) = (rand::thread_rng().gen_range(0..nodesize), rand::thread_rng().gen_range(0..nodesize));
         //let (num1, num2) = (1,2);
         initial.insert(num1, num2);

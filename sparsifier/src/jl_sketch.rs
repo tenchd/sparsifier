@@ -1,15 +1,13 @@
-use ndarray::{Array1,Array2,ArrayView2};
+use ndarray::{Array1,Array2};
 
 use fasthash::xx::Hasher64 as XXHasher;
 use crate::fasthash::FastHasher;
-use core::num;
 use std::hash::{Hash,Hasher};
 use std::cmp::min;
-use std::result;
 
 //use math::round::ceil;
 
-use sprs::{CsMat, CsMatView};
+use sprs::{CsMat};
 use std::ops::Mul;
 
 
@@ -31,7 +29,7 @@ pub fn get_nz_indices(input: &Array2<f64>, col: usize) -> {
 
 // function to add value 'val' to position 'row', 'col' in sparse matrix. 
 pub fn add_to_position(matrix: &mut CsMat<f64>, row: usize, col: usize, val:f64) {
-    let mut location = matrix.get_mut(row,col);
+    let location = matrix.get_mut(row,col);
     match location {
         Some(p) => *p += val,
         None => matrix.insert(row, col, val),
@@ -175,25 +173,3 @@ pub fn jl_sketch_sparse_blocked(og_matrix: &CsMat<f64>, result_matrix: &mut CsMa
 
 }
 
-
-
-
-
-// this is a test function to help me understand some stuff about views and borrowing in sparse matrices. delete later.
-pub fn multiplier(og_matrix: &CsMat<f64>, other: &CsMat<f64>) -> CsMat<f64> {
-    return og_matrix * other
-}
-
-pub fn try_row_populate(length: usize) {
-    let mut row: Array1<f64> = Array1::zeros(length);
-    //println!("{:?}",row);
-    populate_row(&mut row, 0, 0, length,0);
-    //println!("{:?}",row);
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-
-}
