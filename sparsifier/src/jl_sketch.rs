@@ -118,7 +118,7 @@ pub fn jl_sketch_naive(og_matrix: &Array2<f64>, jl_factor: f64, seed: u64) -> Ar
  }
  
 
-
+// NOTE: this and the above versions don't rescale by 1/sqrt(k) after. need to do that
 pub fn jl_sketch_sparse_blocked(og_matrix: &CsMat<f64>, result_matrix: &mut CsMat<f64>, jl_dim: usize, seed: u64, block_rows: usize, block_cols: usize, display: bool) {
     let og_rows = og_matrix.rows();
     let og_cols = og_matrix.cols();

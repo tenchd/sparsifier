@@ -4,7 +4,11 @@ use rand::Rng;
 extern crate fasthash;
 use ndarray::{Array2};
 use ndarray_rand::RandomExt;
-use ndarray_rand::rand_distr::{Uniform,Bernoulli};
+use ndarray_rand::rand_distr::{Uniform,Bernoulli,Distribution};
+
+//use rand::distributions::{Distribution, Uniform};
+use std::fs::File;
+use std::io::{BufWriter, Write};
 
 use sprs::{CsMat};
 
@@ -16,7 +20,9 @@ mod jl_sketch;
 use sparsifiers::Sparsifier;
 use jl_sketch::{jl_sketch_sparse,jl_sketch_sparse_blocked};
 
+use matrix_market_rs::{MtxData, SymInfo, MtxError};
 
+/*
 fn main1() {
     let nodesize: usize  = 10;
     let epsilon: f64 = 1.0;
@@ -62,8 +68,9 @@ fn main1() {
     //let zeros = Array2::<f64>::zeros((10,10));
     //println!("{:?}", zeros[[0,0]]);
 }
+    */
 
-fn main(){
+fn main() -> Result<(), MtxError> {
     let n = 200; // rows in og matrix = # vertices
     let m = 4000; // cols in og matrix = # edges. this dim will be sketched away
 
@@ -115,5 +122,23 @@ fn main(){
     //let diff = &blocked_result - &sparse_result2;
     //println!("{:?}", diff);
     assert_eq!(sparse_result1, blocked_result);    
-    }
+
+    let mtx_content = r#"
+    %%MatrixMarket matrix coordinate integer symmetric
+    2 2 2
+    1 1 3
+    2 2 4
+    "#;
+    
+    let mut f = File::create("sparse2x2.mtx")?;
+    f.write_all(mtx_content.trim().as_bytes());
+    let shape = [2,2];
+    let indices = vec![[0,0], [1,1]];
+    let nonzeros = vec![3,4];
+    let sym = SymInfo::Symmetric;
+    
+    let sparse:MtxData<i32> = MtxData::from_file("sparse2x2.mtx")?;
+    assert_eq!(sparse, MtxData::Sparse(shape, indices, nonzeros, sym));
+    Ok(())
+}
 
